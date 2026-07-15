@@ -1,5 +1,4 @@
 import { API_BASE_URL } from './api'
-import { i18n } from '@/i18n'
 
 const KAKAO_SCRIPT_ID = 'localhub-kakao-sdk'
 const KAKAO_SDK_URL = 'https://t1.kakaocdn.net/kakao_js_sdk/2.8.1/kakao.min.js'
@@ -90,7 +89,7 @@ export function setPageMeta(meta: PageMeta): void {
   setMeta('meta[name="description"]', 'name', 'description', description)
   setMeta('meta[property="og:type"]', 'property', 'og:type', 'website')
   setMeta('meta[property="og:site_name"]', 'property', 'og:site_name', 'LocalHub')
-  setMeta('meta[property="og:locale"]', 'property', 'og:locale', i18n.global.locale.value === 'en' ? 'en_US' : 'ko_KR')
+  setMeta('meta[property="og:locale"]', 'property', 'og:locale', 'ko_KR')
   setMeta('meta[property="og:title"]', 'property', 'og:title', meta.title)
   setMeta('meta[property="og:description"]', 'property', 'og:description', description)
   setMeta('meta[property="og:image"]', 'property', 'og:image', image)
@@ -104,10 +103,9 @@ export function setPageMeta(meta: PageMeta): void {
 
 export function resetPageMeta(): void {
   const publicUrl = import.meta.env.VITE_PUBLIC_SITE_URL || window.location.origin
-  const english = i18n.global.locale.value === 'en'
   setPageMeta({
-    title: english ? 'LocalHub | Seoul & Gyeonggi community' : 'LocalHub | 서울·경기 지역정보 커뮤니티',
-    description: english ? 'Explore Seoul and Gyeonggi places and share local stories anonymously.' : '서울·경기 지역정보를 찾고 익명으로 후기를 공유하세요.',
+    title: 'LocalHub | 서울·경기 지역정보 커뮤니티',
+    description: '서울·경기 지역정보를 찾고 익명으로 후기를 공유하세요.',
     image: `${publicUrl.replace(/\/$/, '')}/og-default.png`,
     url: publicUrl,
   })

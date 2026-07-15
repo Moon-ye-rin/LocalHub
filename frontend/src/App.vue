@@ -13,9 +13,9 @@ import ChatWidget from '@/components/ChatWidget.vue'
       <div class="page-container footer-inner">
         <div>
           <strong>LocalHub</strong>
-          <p>{{ $t('footer.description') }}</p>
+          <p>서울·경기 지역정보 공유 커뮤니티</p>
         </div>
-        <p class="footer-note">{{ $t('footer.license') }}</p>
+        <p class="footer-note">한국관광공사 TourAPI 4.0 · 공공누리 제3유형</p>
       </div>
     </footer>
     <ChatWidget />

@@ -1,18 +1,15 @@
 <script setup lang="ts">
 import { ArrowRight, Database, FileText, MessageCircleMore } from '@lucide/vue'
 import { onMounted, ref, watch } from 'vue'
-import { useI18n } from 'vue-i18n'
 import HeroBanner from '@/components/HeroBanner.vue'
 import LocationCard from '@/components/LocationCard.vue'
 import PostCard from '@/components/PostCard.vue'
-import { translateRegion } from '@/i18n-helpers'
 import { fetchLocations } from '@/services/locations'
 import { fetchPosts } from '@/services/posts'
 import type { Location, Post } from '@/types'
 
 type RegionOption = '서울' | '경기'
 
-const { t } = useI18n()
 const posts = ref<Post[]>([])
 const locations = ref<Location[]>([])
 const postsLoading = ref(true)
@@ -27,10 +24,13 @@ onMounted(async () => {
   } catch {
     bookmarked.value = new Set()
   }
+
   await Promise.all([loadPosts(), loadLocations()])
 })
 
-watch(selectedRegion, () => { void loadLocations() })
+watch(selectedRegion, () => {
+  void loadLocations()
+})
 
 async function loadPosts(): Promise<void> {
   postsLoading.value = true
@@ -45,7 +45,12 @@ async function loadPosts(): Promise<void> {
 async function loadLocations(): Promise<void> {
   locationsLoading.value = true
   try {
-    const data = await fetchLocations({ region: selectedRegion.value, page: 1, size: 4, contenttypeid: '12' })
+    const data = await fetchLocations({
+      region: selectedRegion.value,
+      page: 1,
+      size: 4,
+      contenttypeid: '12',
+    })
     locations.value = data.items
   } finally {
     locationsLoading.value = false
@@ -67,15 +72,15 @@ function toggleBookmark(postId: number): void {
     <section class="feature-strip">
       <article>
         <span><Database :size="22" /></span>
-        <div><strong>{{ $t('home.publicDataTitle') }}</strong><p>{{ $t('home.publicDataDesc') }}</p></div>
+        <div><strong>서울·경기 실제 공공데이터</strong><p>TourAPI 원본 12,512건</p></div>
       </article>
       <article>
         <span><FileText :size="22" /></span>
-        <div><strong>{{ $t('home.communityTitle') }}</strong><p>{{ $t('home.communityDesc') }}</p></div>
+        <div><strong>익명 커뮤니티</strong><p>비밀번호 기반 게시글·댓글</p></div>
       </article>
       <article>
         <span><MessageCircleMore :size="22" /></span>
-        <div><strong>{{ $t('home.chatbotTitle') }}</strong><p>{{ $t('home.chatbotDesc') }}</p></div>
+        <div><strong>데이터 챗봇</strong><p>서울·경기 지역정보와 게시글을 함께 검색</p></div>
       </article>
     </section>
 
@@ -83,10 +88,10 @@ function toggleBookmark(postId: number): void {
       <div class="section-heading">
         <div>
           <span class="eyebrow">PUBLIC DATA</span>
-          <h2>{{ $t('home.recommend', { region: translateRegion(t, selectedRegion) }) }}</h2>
+          <h2>{{ selectedRegion }} 추천 관광정보</h2>
         </div>
         <div class="section-heading-actions">
-          <div class="region-switch" :aria-label="$t('home.selectRegion')">
+          <div class="region-switch" aria-label="추천 지역 선택">
             <button
               v-for="item in REGION_OPTIONS"
               :key="item"
@@ -94,27 +99,40 @@ function toggleBookmark(postId: number): void {
               :class="['region-switch-button', { active: selectedRegion === item }]"
               @click="selectedRegion = item"
             >
-              {{ translateRegion(t, item) }}
+              {{ item }}
             </button>
           </div>
           <RouterLink :to="{ path: '/locations', query: { region: selectedRegion } }" class="text-link">
-            {{ $t('home.viewAll') }} <ArrowRight :size="16" />
+            전체 보기 <ArrowRight :size="16" />
           </RouterLink>
         </div>
       </div>
-      <div v-if="locationsLoading" class="skeleton-grid"><div v-for="item in 4" :key="item" class="skeleton-card"></div></div>
-      <div v-else class="location-grid compact-grid"><LocationCard v-for="location in locations" :key="location.contentid" :location="location" /></div>
+      <div v-if="locationsLoading" class="skeleton-grid">
+        <div v-for="item in 4" :key="item" class="skeleton-card"></div>
+      </div>
+      <div v-else class="location-grid compact-grid">
+        <LocationCard v-for="location in locations" :key="location.contentid" :location="location" />
+      </div>
     </section>
 
     <section class="content-section">
       <div class="section-heading">
-        <div><span class="eyebrow">COMMUNITY</span><h2>{{ $t('home.recentPosts') }}</h2></div>
-        <RouterLink to="/board" class="text-link">{{ $t('home.goBoard') }} <ArrowRight :size="16" /></RouterLink>
+        <div><span class="eyebrow">COMMUNITY</span><h2>최근 지역 후기</h2></div>
+        <RouterLink to="/board" class="text-link">게시판 가기 <ArrowRight :size="16" /></RouterLink>
       </div>
-      <div v-if="postsLoading" class="skeleton-grid"><div v-for="item in 4" :key="item" class="skeleton-card"></div></div>
+      <div v-if="postsLoading" class="skeleton-grid">
+        <div v-for="item in 4" :key="item" class="skeleton-card"></div>
+      </div>
       <div v-else class="post-grid">
-        <PostCard v-for="post in posts" :key="post.id" :post="post" :bookmarked="bookmarked.has(post.id)" @bookmark="toggleBookmark" />
+        <PostCard
+          v-for="post in posts"
+          :key="post.id"
+          :post="post"
+          :bookmarked="bookmarked.has(post.id)"
+          @bookmark="toggleBookmark"
+        />
       </div>
     </section>
+
   </div>
 </template>

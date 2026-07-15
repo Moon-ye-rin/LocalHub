@@ -1,21 +1,16 @@
 <script setup lang="ts">
-import { Bell, Languages, MapPin, Menu, Trash2, Users, X } from '@lucide/vue'
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { useI18n } from 'vue-i18n'
+import { Bell, MapPin, Menu, Trash2, Users, X } from '@lucide/vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { setAppLocale, type AppLocale } from '@/i18n'
-import { translateCategory, translateDistrict, translateRegion, localeCode } from '@/i18n-helpers'
 import { createRealtimeSocket, type RealtimeEvent, type RealtimePostNotification } from '@/services/realtime'
 
 interface NotificationItem extends RealtimePostNotification {
   createdAt: string
 }
 
-const { t, locale } = useI18n()
 const route = useRoute()
 const mobileOpen = ref(false)
 const notificationOpen = ref(false)
-const languageOpen = ref(false)
 const notificationListRef = ref<HTMLElement | null>(null)
 const onlineCount = ref(0)
 const unreadCount = ref(0)
@@ -30,12 +25,12 @@ let dragStartY = 0
 let dragStartScrollTop = 0
 let draggedSincePointerDown = false
 
-const navItems = computed(() => [
-  { label: t('common.home'), to: '/' },
-  { label: t('common.board'), to: '/board' },
-  { label: t('common.locations'), to: '/locations' },
-  { label: t('common.dashboard'), to: '/dashboard' },
-])
+const navItems = [
+  { label: '홈', to: '/' },
+  { label: '게시판', to: '/board' },
+  { label: '지역정보', to: '/locations' },
+  { label: '대시보드', to: '/dashboard' },
+]
 
 function isActive(to: string): boolean {
   if (to === '/') return route.path === '/'
@@ -94,7 +89,6 @@ function scheduleReconnect(): void {
 
 function toggleNotifications(): void {
   notificationOpen.value = !notificationOpen.value
-  languageOpen.value = false
   if (notificationOpen.value) unreadCount.value = 0
 }
 
@@ -106,18 +100,6 @@ function closeNotifications(): void {
 function deleteNotification(item: NotificationItem): void {
   const key = notificationKey(item)
   notifications.value = notifications.value.filter((notification) => notificationKey(notification) !== key)
-}
-
-function changeLocale(next: AppLocale): void {
-  setAppLocale(next)
-  languageOpen.value = false
-  mobileOpen.value = false
-}
-
-function formatNotificationRegion(item: NotificationItem): string {
-  const region = translateRegion(t, item.region)
-  const district = item.district ? translateDistrict(item.district, locale.value) : ''
-  return [region, district].filter(Boolean).join(' ')
 }
 
 function startNotificationDrag(event: PointerEvent): void {
@@ -159,8 +141,8 @@ function suppressDraggedClick(event: MouseEvent): void {
 
 function formatNotificationTime(value: string): string {
   const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return t('header.justNow')
-  return new Intl.DateTimeFormat(localeCode(locale.value), { hour: '2-digit', minute: '2-digit' }).format(date)
+  if (Number.isNaN(date.getTime())) return '방금 전'
+  return new Intl.DateTimeFormat('ko-KR', { hour: '2-digit', minute: '2-digit' }).format(date)
 }
 
 onMounted(connectRealtime)
@@ -179,7 +161,7 @@ onBeforeUnmount(() => {
         <span class="brand-icon"><MapPin :size="19" /></span>
         <span class="brand-copy">
           <strong>LocalHub</strong>
-          <small>{{ $t('header.region') }}</small>
+          <small>서울·경기</small>
         </span>
       </RouterLink>
 
@@ -189,7 +171,7 @@ onBeforeUnmount(() => {
             type="button"
             class="notification-button"
             :class="{ active: notificationOpen }"
-            :aria-label="$t('header.notifications')"
+            aria-label="새 게시글 알림"
             @click="toggleNotifications"
           >
             <Bell :size="19" />
@@ -197,10 +179,10 @@ onBeforeUnmount(() => {
           </button>
           <div v-if="notificationOpen" class="notification-popover">
             <header>
-              <strong>{{ $t('header.notifications') }}</strong>
-              <small>{{ realtimeConnected ? $t('header.connected') : $t('header.reconnecting') }}</small>
+              <strong>새 게시글 알림</strong>
+              <small>{{ realtimeConnected ? '실시간 연결됨' : '재연결 중' }}</small>
             </header>
-            <div v-if="notifications.length === 0" class="notification-empty">{{ $t('header.emptyNotifications') }}</div>
+            <div v-if="notifications.length === 0" class="notification-empty">새로 등록된 게시글이 없습니다.</div>
             <div
               v-else
               ref="notificationListRef"
@@ -211,17 +193,25 @@ onBeforeUnmount(() => {
               @pointercancel="endNotificationDrag"
               @click.capture="suppressDraggedClick"
             >
-              <div v-for="item in notifications" :key="notificationKey(item)" class="notification-item-row">
-                <RouterLink :to="`/posts/${item.id}`" class="notification-item" @click="closeNotifications">
-                  <span>{{ formatNotificationRegion(item) }} · {{ translateCategory(t, item.category) }}</span>
+              <div
+                v-for="item in notifications"
+                :key="notificationKey(item)"
+                class="notification-item-row"
+              >
+                <RouterLink
+                  :to="`/posts/${item.id}`"
+                  class="notification-item"
+                  @click="closeNotifications"
+                >
+                  <span>{{ item.region }} {{ item.district }} · {{ item.category }}</span>
                   <strong>{{ item.title }}</strong>
                   <time>{{ formatNotificationTime(item.createdAt) }}</time>
                 </RouterLink>
                 <button
                   type="button"
                   class="notification-delete"
-                  :aria-label="$t('header.deleteNotification')"
-                  :title="$t('header.deleteNotification')"
+                  aria-label="알림 삭제"
+                  title="알림 삭제"
                   @click.stop="deleteNotification(item)"
                 >
                   <Trash2 :size="15" />
@@ -230,31 +220,13 @@ onBeforeUnmount(() => {
             </div>
           </div>
         </div>
-
-        <div class="language-center">
-          <button
-            type="button"
-            class="language-button"
-            :class="{ active: languageOpen }"
-            :aria-label="$t('header.language')"
-            @click="languageOpen = !languageOpen; notificationOpen = false"
-          >
-            <Languages :size="18" />
-            <span>{{ locale === 'ko' ? 'KO' : 'EN' }}</span>
-          </button>
-          <div v-if="languageOpen" class="language-popover">
-            <button type="button" :class="{ active: locale === 'ko' }" @click="changeLocale('ko')">{{ $t('header.korean') }}</button>
-            <button type="button" :class="{ active: locale === 'en' }" @click="changeLocale('en')">{{ $t('header.english') }}</button>
-          </div>
-        </div>
-
-        <div class="online-status" :class="{ connected: realtimeConnected }" :title="$t('header.presence', { count: onlineCount })">
+        <div class="online-status" :class="{ connected: realtimeConnected }" title="현재 접속자 현황">
           <Users :size="16" />
-          <span>{{ $t('header.online', { count: onlineCount }) }}</span>
+          <span>{{ onlineCount }}명 접속</span>
         </div>
       </div>
 
-      <nav class="desktop-nav" :aria-label="$t('header.mainMenu')">
+      <nav class="desktop-nav" aria-label="주요 메뉴">
         <RouterLink
           v-for="item in navItems"
           :key="item.to"
@@ -265,9 +237,9 @@ onBeforeUnmount(() => {
         </RouterLink>
       </nav>
 
-      <RouterLink to="/posts/new" class="button button-primary desktop-write">{{ $t('common.write') }}</RouterLink>
+      <RouterLink to="/posts/new" class="button button-primary desktop-write">글쓰기</RouterLink>
 
-      <button class="mobile-menu-button" type="button" :aria-label="$t('header.openMenu')" @click="mobileOpen = !mobileOpen">
+      <button class="mobile-menu-button" type="button" aria-label="메뉴 열기" @click="mobileOpen = !mobileOpen">
         <X v-if="mobileOpen" :size="22" />
         <Menu v-else :size="22" />
       </button>
@@ -275,14 +247,7 @@ onBeforeUnmount(() => {
 
     <div v-if="mobileOpen" class="mobile-nav">
       <div class="page-container mobile-nav-inner">
-        <div class="mobile-language-switch">
-          <span><Languages :size="15" /> {{ $t('header.language') }}</span>
-          <div>
-            <button type="button" :class="{ active: locale === 'ko' }" @click="changeLocale('ko')">KO</button>
-            <button type="button" :class="{ active: locale === 'en' }" @click="changeLocale('en')">EN</button>
-          </div>
-        </div>
-        <div class="mobile-presence"><Users :size="15" /> {{ $t('header.presence', { count: onlineCount }) }}</div>
+        <div class="mobile-presence"><Users :size="15" /> 현재 {{ onlineCount }}명 접속</div>
         <RouterLink
           v-for="item in navItems"
           :key="item.to"
@@ -292,7 +257,7 @@ onBeforeUnmount(() => {
         >
           {{ item.label }}
         </RouterLink>
-        <RouterLink to="/posts/new" class="button button-primary" @click="mobileOpen = false">{{ $t('common.newPost') }}</RouterLink>
+        <RouterLink to="/posts/new" class="button button-primary" @click="mobileOpen = false">새 글 작성</RouterLink>
       </div>
     </div>
   </header>

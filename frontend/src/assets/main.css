@@ -760,33 +760,3 @@ textarea.form-input { min-height: 150px; }
   .owner-actions { width: 100%; align-self: stretch; }
   .owner-actions .button { flex: 1; }
 }
-
-/* v2.0 i18n language switch */
-.language-center { position: relative; }
-.language-button {
-  min-width: 58px; height: 39px; padding: 0 10px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  border: 1px solid var(--border); border-radius: 12px; background: white; color: #786552; font-size: 11px; font-weight: 900; cursor: pointer;
-  transition: border-color .18s ease, background .18s ease, color .18s ease;
-}
-.language-button:hover, .language-button.active { border-color: rgba(254,156,0,.35); background: var(--primary-soft); color: #9b5e00; }
-.language-popover {
-  position: absolute; top: calc(100% + 9px); right: 0; z-index: 85; min-width: 130px; padding: 7px;
-  border: 1px solid var(--border); border-radius: 13px; background: white; box-shadow: 0 16px 38px rgba(72,44,8,.16);
-}
-.language-popover button { width: 100%; padding: 9px 11px; border-radius: 9px; color: #685746; text-align: left; font-size: 12px; font-weight: 800; cursor: pointer; }
-.language-popover button:hover, .language-popover button.active { background: var(--primary-soft); color: #9b5e00; }
-.mobile-language-switch { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 12px; color: #6f5d4c; font-size: 12px; font-weight: 800; }
-.mobile-language-switch > span { display: inline-flex; align-items: center; gap: 6px; }
-.mobile-language-switch > div { display: inline-flex; gap: 4px; padding: 3px; border-radius: 10px; background: #f4eee6; }
-.mobile-language-switch button { min-width: 40px; padding: 6px 9px; border-radius: 8px; color: #806f5d; font-size: 10px; font-weight: 900; cursor: pointer; }
-.mobile-language-switch button.active { background: white; color: #9b5e00; box-shadow: 0 2px 8px rgba(80,48,10,.09); }
-.original-data-note { display: inline-block; margin-top: 8px; color: #8b7865; font-size: 11px; line-height: 1.55; }
-html[lang="en"] body { word-break: normal; }
-html[lang="en"] .nav-link, html[lang="en"] .button { letter-spacing: -.01em; }
-@media (max-width: 1060px) {
-  .language-button span { display: none; }
-  .language-button { min-width: 39px; width: 39px; padding: 0; }
-}
-@media (max-width: 720px) {
-  .language-center { display: none; }
-}

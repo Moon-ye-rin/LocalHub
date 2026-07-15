@@ -290,14 +290,3 @@ def test_share_pages_have_open_graph_metadata(client):
     assert '경복궁 | LocalHub' in location_share.text
     assert 'https://example.com/gyeongbokgung.jpg' in location_share.text
     assert 'http://localhost:5173/locations/126508' in location_share.text
-
-
-def test_chat_supports_english_locale(client):
-    response = client.post(
-        "/api/chat",
-        json={"message": "Recommend attractions in Seoul", "history": [], "language": "en"},
-    )
-    assert response.status_code == 200
-    data = response.json()["data"]
-    assert "I found these related places" in data["reply"]
-    assert data["source_notice"] == "Source: Korea Tourism Organization TourAPI 4.0 · KOGL Type 3"

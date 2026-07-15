@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { Bookmark, MapPin } from '@lucide/vue'
 import { ref, watch } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { translateCategory, translateRegion } from '@/i18n-helpers'
 import { bookmarkLocation, unbookmarkLocation } from '@/services/locations'
 import type { Location } from '@/types'
 
@@ -17,7 +15,11 @@ const emit = defineEmits<{
   bookmarkChanged: [payload: { contentid: string; active: boolean }]
 }>()
 
-const { t } = useI18n()
+const categoryName: Record<string, string> = {
+  '12': '관광지', '14': '문화시설', '15': '축제공연행사', '25': '여행코스',
+  '28': '레포츠', '32': '숙박', '38': '쇼핑', '39': '음식점',
+}
+
 const bookmarked = ref(Boolean(props.location.bookmarked))
 const bookmarkLoading = ref(false)
 
@@ -49,15 +51,15 @@ async function toggleBookmark(): Promise<void> {
     >
       <div class="location-image-wrap">
         <img :src="location.firstimage || ''" :alt="location.title" loading="lazy" />
-        <small>{{ translateRegion(t, location.region) }}</small>
+        <small>{{ location.region }}</small>
       </div>
       <div class="location-body">
         <div class="post-badges">
-          <span class="category-badge">{{ translateCategory(t, location.contenttypeid) }}</span>
+          <span class="category-badge">{{ categoryName[location.contenttypeid] || location.contenttypeid }}</span>
         </div>
-        <h3 lang="ko">{{ location.title }}</h3>
-        <div class="location-address" lang="ko"><MapPin :size="14" /> {{ location.addr1 || $t('common.noAddress') }}</div>
-        <p class="source-mini">{{ $t('common.source') }}</p>
+        <h3>{{ location.title }}</h3>
+        <div class="location-address"><MapPin :size="14" /> {{ location.addr1 || '주소 미제공' }}</div>
+        <p class="source-mini">출처: 한국관광공사 · 공공누리 제3유형</p>
       </div>
     </RouterLink>
 
@@ -67,8 +69,8 @@ async function toggleBookmark(): Promise<void> {
       class="location-card-bookmark"
       :class="{ selected: bookmarked }"
       :disabled="bookmarkLoading"
-      :aria-label="bookmarked ? $t('common.removeBookmark') : $t('common.addBookmark')"
-      :title="bookmarked ? $t('common.removeBookmark') : $t('common.addBookmark')"
+      :aria-label="bookmarked ? '지역정보 북마크 해제' : '지역정보 북마크 추가'"
+      :title="bookmarked ? '북마크 해제' : '북마크 추가'"
       @click.stop="toggleBookmark"
     >
       <Bookmark :size="18" :fill="bookmarked ? 'currentColor' : 'none'" />

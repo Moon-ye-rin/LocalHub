@@ -255,7 +255,6 @@ class ChatHistoryItem(BaseModel):
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=1000)
     history: list[ChatHistoryItem] = Field(default_factory=list, max_length=20)
-    language: Literal["ko", "en"] = "ko"
 
 
 class ChatReference(BaseModel):
