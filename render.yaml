@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: localhub-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: DATABASE_URL
+        value: sqlite:///./localhub.db
+      - key: SEED_DATA
+        value: true
+      - key: SEED_LOCATIONS
+        value: true
+      - key: DATA_DIR
+        value: app/data
+      - key: UPLOAD_DIR
+        value: uploads
+      - key: USE_OPENAI
+        value: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-5-mini
+      - key: CORS_ORIGINS
+        sync: false
+      - key: FRONTEND_PUBLIC_URL
+        sync: false

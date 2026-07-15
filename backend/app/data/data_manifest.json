@@ -1,0 +1,132 @@
+{
+  "provider": "한국관광공사",
+  "dataset": "TourAPI 4.0 국문 관광정보 서비스",
+  "license": "공공누리 제3유형",
+  "display_rule": "firstimage가 빈 문자열(\"\") 또는 NULL인 항목은 API·화면·챗봇에서 제외",
+  "total": 12512,
+  "visible_total": 11598,
+  "regions": {
+    "서울": {
+      "total": 7615,
+      "visible": 7102
+    },
+    "경기": {
+      "total": 4897,
+      "visible": 4496
+    }
+  },
+  "files": [
+    {
+      "file": "seoul/서울_관광지.json",
+      "region": "서울",
+      "contenttypeid": "12",
+      "count": 783,
+      "visible": 718
+    },
+    {
+      "file": "seoul/서울_문화시설.json",
+      "region": "서울",
+      "contenttypeid": "14",
+      "count": 566,
+      "visible": 527
+    },
+    {
+      "file": "seoul/서울_축제공연행사.json",
+      "region": "서울",
+      "contenttypeid": "15",
+      "count": 201,
+      "visible": 199
+    },
+    {
+      "file": "seoul/서울_여행코스.json",
+      "region": "서울",
+      "contenttypeid": "25",
+      "count": 51,
+      "visible": 45
+    },
+    {
+      "file": "seoul/서울_레포츠.json",
+      "region": "서울",
+      "contenttypeid": "28",
+      "count": 126,
+      "visible": 114
+    },
+    {
+      "file": "seoul/서울_숙박.json",
+      "region": "서울",
+      "contenttypeid": "32",
+      "count": 423,
+      "visible": 192
+    },
+    {
+      "file": "seoul/서울_쇼핑.json",
+      "region": "서울",
+      "contenttypeid": "38",
+      "count": 4368,
+      "visible": 4354
+    },
+    {
+      "file": "seoul/서울_음식점.json",
+      "region": "서울",
+      "contenttypeid": "39",
+      "count": 1097,
+      "visible": 953
+    },
+    {
+      "file": "gyeonggi/경기_관광지.json",
+      "region": "경기",
+      "contenttypeid": "12",
+      "count": 912,
+      "visible": 816
+    },
+    {
+      "file": "gyeonggi/경기_문화시설.json",
+      "region": "경기",
+      "contenttypeid": "14",
+      "count": 223,
+      "visible": 217
+    },
+    {
+      "file": "gyeonggi/경기_축제공연행사.json",
+      "region": "경기",
+      "contenttypeid": "15",
+      "count": 56,
+      "visible": 56
+    },
+    {
+      "file": "gyeonggi/경기_여행코스.json",
+      "region": "경기",
+      "contenttypeid": "25",
+      "count": 156,
+      "visible": 129
+    },
+    {
+      "file": "gyeonggi/경기_레포츠.json",
+      "region": "경기",
+      "contenttypeid": "28",
+      "count": 697,
+      "visible": 676
+    },
+    {
+      "file": "gyeonggi/경기_숙박.json",
+      "region": "경기",
+      "contenttypeid": "32",
+      "count": 173,
+      "visible": 116
+    },
+    {
+      "file": "gyeonggi/경기_쇼핑.json",
+      "region": "경기",
+      "contenttypeid": "38",
+      "count": 100,
+      "visible": 97
+    },
+    {
+      "file": "gyeonggi/경기_음식점.json",
+      "region": "경기",
+      "contenttypeid": "39",
+      "count": 2580,
+      "visible": 2389
+    }
+  ]
+}
