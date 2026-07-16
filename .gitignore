@@ -21,3 +21,26 @@ backend/test_localhub.db
 .idea/
 .DS_Store
 Thumbs.db
+
+# ---------- Database ----------
+backend/localhub.db
+*.db
+*.sqlite
+*.sqlite3
+
+# ---------- Uploads ----------
+backend/uploads/
+# 또는
+# backend/uploads/*
+# !backend/uploads/.gitkeep
+
+# ---------- Python ----------
+*.pyo
+*.pyd
+
+# ---------- Test / Coverage ----------
+.coverage
+coverage.xml
+htmlcov/
+.mypy_cache/
+.ruff_cache/
