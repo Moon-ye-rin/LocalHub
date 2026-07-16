@@ -237,7 +237,7 @@ async def _fetch_graph(start: Coordinate, end: Coordinate, mode: RouteMode, radi
         async with httpx.AsyncClient(
             timeout=timeout,
             follow_redirects=True,
-            headers={"User-Agent": "LocalHub-SSAFY/1.10 educational-routing"},
+            headers={"User-Agent": "LocalHub-SSAFY/1.11.1 educational-routing"},
         ) as client:
             response = await client.post(settings.overpass_url, data={"data": query})
             response.raise_for_status()

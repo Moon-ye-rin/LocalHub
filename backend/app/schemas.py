@@ -287,7 +287,7 @@ class ChatRequest(BaseModel):
 
 
 class ChatReference(BaseModel):
-    type: Literal["location", "post"]
+    type: Literal["location", "post", "route"]
     id: str
     name: str
 

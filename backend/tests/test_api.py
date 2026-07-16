@@ -112,6 +112,65 @@ def test_posts_list_tags_and_chat(client):
     assert "한국관광공사" in chat.json()["data"]["source_notice"]
 
 
+def test_chat_district_search(client):
+    """시·군·구 이름으로 검색 범위를 좁힌다 (v1.11.0)."""
+    res = client.post("/api/chat", json={"message": "종로구 관광지", "history": []})
+    assert res.status_code == 200
+    refs = res.json()["data"]["references"]
+    # 종로구에 있는 경복궁이 포함되고, 수원 소재 장소는 제외된다.
+    assert any(r["type"] == "location" and r["id"] == "126508" for r in refs)
+    assert all(r["id"] != "999001" for r in refs if r["type"] == "location")
+
+
+def test_chat_route_reference(client):
+    """경로 의도를 감지하면 route 참조를 생성한다 (v1.11.0)."""
+    res = client.post("/api/chat", json={"message": "경복궁에서 수원화성 가는 길", "history": []})
+    assert res.status_code == 200
+    refs = res.json()["data"]["references"]
+    route_refs = [r for r in refs if r["type"] == "route"]
+    assert route_refs, "경로 참조가 생성되어야 한다"
+    # id 형식은 '출발contentid:도착contentid'
+    assert route_refs[0]["id"] == "126508:999001"
+
+
+def test_chat_route_rejects_bare_district(client):
+    """'강남구에서 서대문구'처럼 순수 지역명은 경로 지점으로 인정하지 않는다 (v1.11.1)."""
+    res = client.post("/api/chat", json={"message": "종로구에서 수원시 가는 길", "history": []})
+    assert res.status_code == 200
+    refs = res.json()["data"]["references"]
+    # 지역명만으로는 경로 버튼을 만들지 않는다.
+    assert not any(r["type"] == "route" for r in refs)
+    # 대신 정식 명칭 안내 문구가 포함된다.
+    assert "정식 명칭" in res.json()["data"]["reply"]
+
+
+def test_chat_multiturn_inherits_context(client):
+    """직전 대화에서 지역·유형을 이어받는다 (v1.11.0)."""
+    history = [
+        {"role": "user", "content": "종로구 관광지 추천"},
+        {"role": "assistant", "content": "..."},
+    ]
+    res = client.post("/api/chat", json={"message": "근처에 볼만한 곳 더 있어?", "history": history})
+    assert res.status_code == 200
+    refs = res.json()["data"]["references"]
+    # 종로구 맥락이 승계되어 경복궁(종로구)이 결과에 남는다.
+    assert any(r["id"] == "126508" for r in refs if r["type"] == "location")
+
+
+def test_chat_falls_back_when_openai_fails(client, monkeypatch):
+    """OpenAI 호출이 실패해도 502가 아니라 로컬 결과로 폴백한다 (v1.11.0)."""
+    from app.services import chat_service
+
+    monkeypatch.setattr(chat_service.settings, "use_openai", True)
+    monkeypatch.setattr(chat_service.settings, "openai_api_key", "sk-test-invalid")
+    monkeypatch.setattr(chat_service, "try_openai_reply", lambda *a, **k: None)
+
+    res = client.post("/api/chat", json={"message": "경복궁 관광지", "history": []})
+    assert res.status_code == 200
+    assert res.json()["data"]["mode"] == "local"
+    assert res.json()["data"]["references"]
+
+
 def test_comment_crud(client):
     created = client.post(
         "/api/posts/1/comments",

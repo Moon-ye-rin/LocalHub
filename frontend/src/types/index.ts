@@ -129,7 +129,7 @@ export interface ChatMessage {
 }
 
 export interface ChatReference {
-  type: 'location' | 'post'
+  type: 'location' | 'post' | 'route'
   id: string
   name: string
 }

@@ -163,6 +163,7 @@ async function loadPage(): Promise<void> {
       url: window.location.href,
     })
     await loadComments()
+    await autoRouteFromQuery()
   } catch (caught) {
     error.value = getApiErrorMessage(caught, '지역정보를 불러오지 못했습니다.')
   } finally {
@@ -385,6 +386,26 @@ function clearRoute(): void {
   routeError.value = ''
 }
 
+async function autoRouteFromQuery(): Promise<void> {
+  // 챗봇에서 '경로 보기'로 진입한 경우 ?to=도착지contentid 를 읽어
+  // 도착지를 자동 선택하고 경로 계산까지 바로 수행한다.
+  const target = route.query.to
+  const endId = Array.isArray(target) ? target[0] : target
+  if (!endId || !location.value || endId === location.value.contentid) return
+  try {
+    const end = await fetchLocation(String(endId))
+    if (end.mapx == null || end.mapy == null) {
+      routeError.value = '도착지 좌표가 없어 경로를 표시할 수 없습니다.'
+      return
+    }
+    selectDestination(end)
+    mapView.value = 'route'
+    await findRoute()
+  } catch {
+    routeError.value = '챗봇이 안내한 도착지를 불러오지 못했습니다.'
+  }
+}
+
 function formatDistance(meters: number): string {
   return meters >= 1000 ? `${(meters / 1000).toFixed(1)}km` : `${meters}m`
 }
@@ -597,6 +618,7 @@ function formatDate(value: string): string {
               <div><Car :size="18" /><span>예상 시간(자동차)<strong>약 {{ routeDriveMinutes }}분</strong></span></div>
               <div><Footprints :size="18" /><span>예상 시간(도보)<strong>약 {{ routeWalkMinutes }}분</strong></span></div>
             </div>
+            <button v-if="routeData" type="button" class="route-clear-btn" @click="clearRoute">경로 지우기</button>
             <p v-if="routeData" class="route-notice">{{ routeData.notice }}</p>
             <p class="map-attribution">지도·도로 데이터 © OpenStreetMap contributors</p>
           </div>
