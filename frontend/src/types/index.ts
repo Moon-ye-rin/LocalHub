@@ -153,6 +153,38 @@ export const CATEGORY_OPTIONS = [
 ]
 
 
+export type RouteMode = 'walk' | 'drive'
+
+export interface AStarRouteRequest {
+  start_contentid: string
+  end_contentid: string
+  mode: RouteMode
+}
+
+export interface AStarRoutePoint {
+  contentid: string
+  title: string
+  latitude: number
+  longitude: number
+}
+
+export interface AStarRouteData {
+  algorithm: 'A*'
+  mode: RouteMode
+  start: AStarRoutePoint
+  end: AStarRoutePoint
+  distance_m: number
+  direct_distance_m: number
+  estimated_minutes: number
+  drive_minutes?: number
+  walk_minutes?: number
+  explored_nodes: number
+  coordinates: [number, number][]
+  attribution: string
+  notice: string
+}
+
+
 export interface DashboardSeries {
   name: string
   data: number[]

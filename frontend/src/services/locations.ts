@@ -8,7 +8,7 @@ import type {
 } from '@/types'
 
 export interface LocationQuery {
-  region?: '서울' | '경기'
+  region?: '전체' | '서울' | '경기'
   bookmarked_only?: boolean
   contenttypeid?: string
   keyword?: string

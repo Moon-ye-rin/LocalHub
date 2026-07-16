@@ -12,7 +12,7 @@ from .database import Base, SessionLocal, engine, migrate_legacy_schema
 from .models import Location
 from .responses import fail
 from .realtime import realtime_manager
-from .routers import chat, dashboard, locations, posts, share, tags
+from .routers import chat, dashboard, locations, posts, routes, share, tags
 from .seed import seed_posts
 from .seed_locations import seed_locations
 from .services.location_service import visible_location_conditions
@@ -38,12 +38,12 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(
     title=settings.app_name,
-    version="1.8.0-final",
+    version="1.10.0-final",
     description=(
         "LocalHub 서울·경기 익명 커뮤니티 API. 제공된 서울·경기 TourAPI 데이터를 "
         "SQLite 캐시에 적재하고, 대표 이미지(firstimage)가 있는 항목만 노출합니다. "
-        "게시글 좋아요 토글, 지역정보 댓글 CRUD·별점·좋아요·북마크·조회·근처 추천과 "
-        "WebSocket 새 게시글 알림·접속자 현황을 제공합니다."
+        "게시글 좋아요 토글, 지역정보 댓글 CRUD·별점·좋아요·북마크·조회·근처 추천, "
+        "OpenStreetMap 도로망 기반 A* 길찾기와 WebSocket 새 게시글 알림·접속자 현황을 제공합니다."
     ),
     lifespan=lifespan,
 )
@@ -61,6 +61,7 @@ app.mount("/static", StaticFiles(directory="app/static", check_dir=False), name=
 app.include_router(posts.router, prefix=settings.api_prefix)
 app.include_router(tags.router, prefix=settings.api_prefix)
 app.include_router(locations.router, prefix=settings.api_prefix)
+app.include_router(routes.router, prefix=settings.api_prefix)
 app.include_router(chat.router, prefix=settings.api_prefix)
 app.include_router(dashboard.router, prefix=settings.api_prefix)
 app.include_router(share.router)

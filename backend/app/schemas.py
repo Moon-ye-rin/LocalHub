@@ -247,6 +247,35 @@ class LocationListData(BaseModel):
     total_pages: int
 
 
+class AStarRouteRequest(BaseModel):
+    start_contentid: str = Field(min_length=1, max_length=20)
+    end_contentid: str = Field(min_length=1, max_length=20)
+    mode: Literal["walk", "drive"] = "walk"
+
+
+class AStarRoutePoint(BaseModel):
+    contentid: str
+    title: str
+    latitude: float
+    longitude: float
+
+
+class AStarRouteData(BaseModel):
+    algorithm: Literal["A*"]
+    mode: Literal["walk", "drive"]
+    start: AStarRoutePoint
+    end: AStarRoutePoint
+    distance_m: int
+    direct_distance_m: int
+    estimated_minutes: int
+    drive_minutes: int
+    walk_minutes: int
+    explored_nodes: int
+    coordinates: list[list[float]]
+    attribution: str
+    notice: str
+
+
 class ChatHistoryItem(BaseModel):
     role: Literal["user", "assistant"]
     content: str = Field(min_length=1, max_length=2000)

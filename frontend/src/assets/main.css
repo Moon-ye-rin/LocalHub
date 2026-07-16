@@ -760,3 +760,134 @@ textarea.form-input { min-height: 150px; }
   .owner-actions { width: 100%; align-self: stretch; }
   .owner-actions .button { flex: 1; }
 }
+
+/* v1.10 OpenStreetMap 도로망 A* 길찾기 */
+.route-map-section { position: relative; overflow: visible; padding-bottom: 18px; }
+.route-planner-panel { position: relative; z-index: 500; display: grid; gap: 14px; margin-bottom: 16px; padding: 18px; border: 1px solid rgba(254,156,0,.2); border-radius: 18px; background: #fffaf1; }
+.route-start-summary, .route-selected-destination { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.route-start-summary > div, .route-selected-destination > div { display: grid; min-width: 0; gap: 3px; }
+.route-start-summary strong, .route-selected-destination strong { overflow: hidden; color: #3f3327; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.route-start-summary small, .route-selected-destination small { overflow: hidden; color: var(--muted-foreground); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.route-step-badge { flex: 0 0 auto; display: inline-grid; place-items: center; min-width: 42px; height: 27px; padding: 0 9px; border-radius: 999px; background: #2f7d59; color: white; font-size: 10px; font-weight: 900; }
+.route-step-badge.end { background: #db6d45; }
+.route-search-grid { display: grid; grid-template-columns: 120px minmax(260px, 1fr) auto; align-items: end; gap: 10px; }
+.route-region-field, .route-destination-search { display: grid; min-width: 0; gap: 6px; }
+.route-destination-search { position: relative; }
+.route-region-field > span, .route-destination-search > label { color: #756451; font-size: 10px; font-weight: 850; }
+.route-search-input-wrap { position: relative; min-width: 0; }
+.route-search-input-wrap > svg:first-child { position: absolute; z-index: 1; top: 50%; left: 13px; transform: translateY(-50%); color: #9b8975; pointer-events: none; }
+.route-search-input-wrap .form-input { min-height: 44px; padding-left: 39px; padding-right: 38px; }
+.route-search-input-wrap .route-spinner { position: absolute; top: calc(50% - 8px); right: 13px; color: var(--primary); }
+.route-find-button { min-width: 124px; min-height: 44px; white-space: nowrap; }
+.route-spinner { animation: route-spin .8s linear infinite; }
+@keyframes route-spin { to { transform: rotate(360deg); } }
+.route-search-results { position: absolute; z-index: 1200; top: calc(100% + 5px); left: 0; right: 0; max-height: 290px; overflow-y: auto; margin: 0; padding: 6px; border: 1px solid var(--border); border-radius: 14px; background: white; box-shadow: 0 16px 36px rgba(74,55,34,.17); list-style: none; }
+.route-search-results li + li { margin-top: 3px; }
+.route-search-results li > button { width: 100%; display: grid; grid-template-columns: 52px minmax(0,1fr); align-items: center; gap: 10px; padding: 8px; border-radius: 10px; background: transparent; color: inherit; cursor: pointer; text-align: left; }
+.route-search-results li > button:hover { background: #fff6e8; }
+.route-search-results img { width: 52px; height: 44px; border-radius: 8px; object-fit: cover; background: #eee6dc; }
+.route-search-results li span { display: grid; min-width: 0; gap: 4px; }
+.route-search-results strong, .route-search-results small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.route-search-results strong { color: #43372c; font-size: 12px; }
+.route-search-results small { color: var(--muted-foreground); font-size: 9px; }
+.route-search-empty { padding: 22px 12px; color: var(--muted-foreground); font-size: 11px; text-align: center; }
+.route-quick-destinations { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.route-quick-destinations > span { margin-right: 3px; color: #7f6e5c; font-size: 10px; font-weight: 850; }
+.route-quick-destinations button { max-width: 170px; overflow: hidden; padding: 6px 9px; border: 1px solid #e8dbca; border-radius: 999px; background: white; color: #695845; cursor: pointer; font-size: 10px; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
+.route-quick-destinations button:hover, .route-quick-destinations button.active { border-color: rgba(254,156,0,.58); background: #fff0d5; color: #a75d00; }
+.route-selected-destination { padding-top: 12px; border-top: 1px solid rgba(133,105,72,.15); }
+.route-selected-destination > button { flex: 0 0 auto; display: grid; place-items: center; width: 30px; height: 30px; margin-left: auto; border-radius: 9px; background: #f2e9dd; color: #7c6955; cursor: pointer; }
+.route-error { margin: 0; }
+.route-map-wrap { position: relative; z-index: 1; }
+.leaflet-route-map { position: relative; z-index: 1; }
+.route-map-load-error { display: grid; place-items: center; min-height: 100px; margin-bottom: 10px; border: 1px dashed #d9c7b1; border-radius: 14px; color: #9a644e; font-size: 12px; }
+.route-map-legend { position: absolute; z-index: 420; right: 12px; bottom: 12px; display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid rgba(95,75,52,.13); border-radius: 11px; background: rgba(255,255,255,.92); box-shadow: 0 5px 15px rgba(56,39,20,.09); backdrop-filter: blur(7px); }
+.route-map-legend span { display: inline-flex; align-items: center; gap: 5px; color: #625343; font-size: 9px; font-weight: 800; }
+.route-map-legend i { width: 9px; height: 9px; border-radius: 50%; background: #2f7d59; }
+.route-map-legend i.end { background: #db6d45; }
+.route-map-legend i.path { width: 17px; height: 4px; border-radius: 999px; background: var(--primary); }
+.route-map-marker-shell { border: 0 !important; background: transparent !important; }
+.route-map-marker { position: relative; display: grid; place-items: center; width: 42px; height: 30px; border: 3px solid white; border-radius: 15px 15px 15px 3px; transform: rotate(-45deg); box-shadow: 0 5px 13px rgba(39,31,23,.28); color: white; font-size: 9px; font-weight: 900; }
+.route-map-marker::after { content: ''; position: absolute; right: 3px; bottom: 3px; width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,.86); }
+.route-map-marker-start { background: #2f7d59; }
+.route-map-marker-end { background: #db6d45; }
+.route-map-marker-shell span { line-height: 1; }
+.route-map-marker-shell .route-map-marker { writing-mode: horizontal-tb; }
+.route-map-marker-shell .route-map-marker::before { content: attr(data-label); }
+.route-map-marker { text-indent: 0; }
+.route-map-marker { transform-origin: center; }
+.route-map-marker { font-style: normal; }
+.route-map-marker { /* 글자만 다시 수평으로 보이도록 내부 텍스트 렌더링은 브라우저 회전에 맞춰 보정 */ }
+.route-map-marker-start, .route-map-marker-end { color: transparent; }
+.route-map-marker-start::before, .route-map-marker-end::before { position: absolute; content: '출발'; transform: rotate(45deg); color: white; }
+.route-map-marker-end::before { content: '도착'; }
+.route-summary-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 13px; }
+.route-summary-grid > div { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 12px 14px; border: 1px solid #eadfce; border-radius: 13px; background: #fffdf9; color: var(--primary-dark); }
+.route-summary-grid > div > span { display: grid; min-width: 0; gap: 3px; color: var(--muted-foreground); font-size: 9px; }
+.route-summary-grid strong { overflow: hidden; color: #43372c; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.route-notice { margin-top: 9px; color: #8b7864; font-size: 10px; }
+
+@media (max-width: 980px) {
+  .route-search-grid { grid-template-columns: 120px minmax(0,1fr); }
+  .route-find-button { grid-column: 1 / -1; width: 100%; }
+}
+
+@media (max-width: 720px) {
+  .route-planner-panel { padding: 14px; }
+  .route-search-grid { grid-template-columns: 1fr; }
+  .route-destination-search { grid-column: 1; grid-row: 1; }
+  .route-region-field { grid-row: 2; }
+  .route-find-button { grid-row: 3; }
+  .route-search-results { max-height: 250px; }
+  .route-map-legend { left: 8px; right: auto; bottom: 8px; gap: 7px; }
+  .route-summary-grid { grid-template-columns: 1fr; }
+}
+
+/* v1.10.1 Leaflet 외부 스크립트 없이 동작하는 자체 OSM 타일 지도 */
+.localhub-tile-map { position: relative; overflow: hidden; touch-action: none; cursor: grab; user-select: none; }
+.localhub-tile-map.dragging { cursor: grabbing; }
+.localhub-map-tiles { position: absolute; inset: 0; overflow: hidden; background-color: #eee8de; background-image: linear-gradient(rgba(127,108,86,.10) 1px, transparent 1px), linear-gradient(90deg, rgba(127,108,86,.10) 1px, transparent 1px); background-size: 32px 32px; }
+.localhub-map-tiles img { position: absolute; width: 256px; height: 256px; max-width: none; pointer-events: none; user-select: none; }
+.localhub-map-overlay { position: absolute; z-index: 20; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.localhub-route-shadow, .localhub-route-line { fill: none; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.localhub-route-shadow { stroke: rgba(255,255,255,.94); stroke-width: 10; }
+.localhub-route-line { stroke: #fe9c00; stroke-width: 6; }
+.localhub-map-marker { position: absolute; z-index: 40; display: grid; place-items: center; width: 44px; height: 32px; border: 3px solid white; border-radius: 16px 16px 16px 4px; transform: translate(-50%, -100%) rotate(-45deg); transform-origin: 50% 100%; box-shadow: 0 6px 15px rgba(39,31,23,.3); color: white; pointer-events: none; }
+.localhub-map-marker span { transform: rotate(45deg); font-size: 9px; font-weight: 900; line-height: 1; }
+.localhub-map-marker-start { background: #2f7d59; }
+.localhub-map-marker-end { background: #db6d45; }
+.localhub-map-controls { position: absolute; z-index: 80; top: 12px; left: 12px; display: grid; overflow: hidden; border: 1px solid rgba(70,55,38,.22); border-radius: 11px; background: white; box-shadow: 0 4px 12px rgba(56,39,20,.12); }
+.localhub-map-controls button { display: grid; place-items: center; width: 36px; height: 34px; border: 0; border-bottom: 1px solid #eadfce; background: white; color: #554536; cursor: pointer; font-size: 20px; font-weight: 700; }
+.localhub-map-controls button:last-child { border-bottom: 0; }
+.localhub-map-controls button:hover:not(:disabled) { background: #fff4df; color: #a75d00; }
+.localhub-map-controls button:disabled { opacity: .38; cursor: default; }
+.localhub-map-controls button.fit { height: 31px; font-size: 9px; }
+.route-map-fallback { display: grid; gap: 8px; }
+.route-map-fallback > p { margin: 0; color: #8a6a4f; font-size: 11px; }
+.localhub-map-attribution { margin: 7px 3px 0; color: #8c7a67; font-size: 9px; text-align: right; }
+.route-map-wrap .route-map-legend { bottom: 28px; }
+
+@media (max-width: 720px) {
+  .localhub-map-controls { top: 8px; left: 8px; }
+  .route-map-wrap .route-map-legend { bottom: 27px; }
+}
+
+
+/* v1.10.2 위치/경로찾기 토글 및 경로 결과 정리 */
+.map-section-heading { align-items: center; }
+.map-heading-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 10px; }
+.map-coordinate { display: inline-flex; align-items: center; gap: 5px; color: var(--muted-foreground); font-size: 11px; }
+.map-view-toggle { display: inline-flex; align-items: center; gap: 4px; padding: 4px; border: 1px solid #e6d9c8; border-radius: 12px; background: #f7f0e6; }
+.map-view-toggle button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 34px; padding: 0 13px; border: 0; border-radius: 9px; background: transparent; color: #6f5e4b; cursor: pointer; font-size: 11px; font-weight: 800; }
+.map-view-toggle button:hover { color: #a75d00; }
+.map-view-toggle button.active { background: white; color: #a75d00; box-shadow: 0 2px 8px rgba(72,50,24,.10); }
+.location-map-pane, .route-map-pane { min-width: 0; }
+.localhub-map-tile-warning { position: absolute; z-index: 70; top: 12px; left: 50%; max-width: calc(100% - 120px); transform: translateX(-50%); padding: 7px 10px; border: 1px solid rgba(153,102,44,.22); border-radius: 999px; background: rgba(255,250,241,.94); color: #8a6038; font-size: 10px; font-weight: 700; text-align: center; pointer-events: none; }
+
+@media (max-width: 720px) {
+  .map-section-heading { align-items: stretch; }
+  .map-heading-actions { width: 100%; justify-content: space-between; }
+  .map-view-toggle { width: 100%; }
+  .map-view-toggle button { flex: 1; }
+  .localhub-map-tile-warning { top: 54px; max-width: calc(100% - 24px); border-radius: 10px; }
+}

@@ -2,10 +2,16 @@
 import {
   ArrowLeft,
   Bookmark,
+  Car,
   Edit3,
+  Footprints,
   Eye,
   Heart,
+  LoaderCircle,
   MapPin,
+  Navigation,
+  Route as RouteIcon,
+  Search,
   MessageCircle,
   Phone,
   Save,
@@ -18,6 +24,7 @@ import {
 import { computed, onUnmounted, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import LocationCard from '@/components/LocationCard.vue'
+import LocationRouteMap from '@/components/LocationRouteMap.vue'
 import PasswordModal from '@/components/PasswordModal.vue'
 import ShareButtons from '@/components/ShareButtons.vue'
 import { getApiErrorMessage } from '@/services/api'
@@ -28,12 +35,19 @@ import {
   deleteLocationComment,
   fetchLocation,
   fetchLocationComments,
+  fetchLocations,
   likeLocation,
   unbookmarkLocation,
   unlikeLocation,
   updateLocationComment,
 } from '@/services/locations'
-import { CATEGORY_OPTIONS, type Location, type LocationComment } from '@/types'
+import { fetchAStarRoute } from '@/services/routes'
+import {
+  CATEGORY_OPTIONS,
+  type AStarRouteData,
+  type Location,
+  type LocationComment,
+} from '@/types'
 
 const route = useRoute()
 const location = ref<Location | null>(null)
@@ -54,6 +68,18 @@ const commentDeleteError = ref('')
 const commentForm = reactive({ nickname: '', content: '', rating: 0, password: '' })
 const editForm = reactive({ nickname: '', content: '', rating: 0, password: '' })
 
+const destinationKeyword = ref('')
+const destinationRegion = ref<'전체' | '서울' | '경기'>('전체')
+const destinationResults = ref<Location[]>([])
+const destination = ref<Location | null>(null)
+const destinationSearching = ref(false)
+const destinationSearchOpen = ref(false)
+const mapView = ref<'location' | 'route'>('location')
+const routeData = ref<AStarRouteData | null>(null)
+const routeLoading = ref(false)
+const routeError = ref('')
+let destinationSearchTimer: number | undefined
+
 const contentid = computed(() => String(route.params.contentid))
 const categoryName = computed(() => CATEGORY_OPTIONS.find((item) => item.code === location.value?.contenttypeid)?.label || location.value?.contenttypeid)
 const shareDescription = computed(() => [location.value?.region, categoryName.value, location.value?.addr1].filter(Boolean).join(' · '))
@@ -64,31 +90,69 @@ const mapEmbedUrl = computed(() => {
   if (longitude == null || latitude == null) return ''
   const longitudeDelta = 0.008
   const latitudeDelta = 0.005
-  const bbox = [
-    longitude - longitudeDelta,
-    latitude - latitudeDelta,
-    longitude + longitudeDelta,
-    latitude + latitudeDelta,
-  ].join(',')
   const params = new URLSearchParams({
-    bbox,
+    bbox: [
+      longitude - longitudeDelta,
+      latitude - latitudeDelta,
+      longitude + longitudeDelta,
+      latitude + latitudeDelta,
+    ].join(','),
     layer: 'mapnik',
     marker: `${latitude},${longitude}`,
   })
   return `https://www.openstreetmap.org/export/embed.html?${params.toString()}`
 })
 
+const routeCoordinates = computed<[number, number][]>(() => routeData.value?.coordinates || [])
+const routeDriveMinutes = computed(() => {
+  if (!routeData.value) return 0
+  return routeData.value.drive_minutes ?? Math.max(1, Math.round((routeData.value.distance_m / 1000) / 30 * 60))
+})
+const routeWalkMinutes = computed(() => {
+  if (!routeData.value) return 0
+  return routeData.value.walk_minutes ?? Math.max(1, Math.round((routeData.value.distance_m / 1000) / 4.5 * 60))
+})
+
+
 watch(contentid, () => {
   void loadPage()
 }, { immediate: true })
 
-onUnmounted(resetPageMeta)
+watch(destinationKeyword, (value) => {
+  if (destination.value && value !== destination.value.title) {
+    destination.value = null
+    routeData.value = null
+  }
+  if (destinationSearchTimer) window.clearTimeout(destinationSearchTimer)
+  const keyword = value.trim()
+  if (!keyword || destination.value?.title === keyword) {
+    destinationResults.value = []
+    destinationSearchOpen.value = false
+    return
+  }
+  destinationSearchTimer = window.setTimeout(() => {
+    void searchDestinations()
+  }, 280)
+})
+
+watch(destinationRegion, () => {
+  destination.value = null
+  routeData.value = null
+  if (destinationKeyword.value.trim()) void searchDestinations()
+})
+
+onUnmounted(() => {
+  resetPageMeta()
+  if (destinationSearchTimer) window.clearTimeout(destinationSearchTimer)
+})
 
 async function loadPage(): Promise<void> {
   loading.value = true
   error.value = ''
   actionError.value = ''
   comments.value = []
+  mapView.value = 'location'
+  resetRoutePlanner()
   cancelCommentEdit()
   try {
     location.value = await fetchLocation(contentid.value)
@@ -252,6 +316,79 @@ async function confirmCommentDelete(password: string): Promise<void> {
   }
 }
 
+function resetRoutePlanner(): void {
+  destinationKeyword.value = ''
+  destinationRegion.value = '전체'
+  destinationResults.value = []
+  destination.value = null
+  destinationSearchOpen.value = false
+  routeData.value = null
+  routeError.value = ''
+  routeLoading.value = false
+}
+
+async function searchDestinations(): Promise<void> {
+  const keyword = destinationKeyword.value.trim()
+  if (!keyword) return
+  destinationSearching.value = true
+  routeError.value = ''
+  try {
+    const data = await fetchLocations({
+      region: destinationRegion.value,
+      keyword,
+      page: 1,
+      size: 10,
+    })
+    destinationResults.value = data.items.filter((item) => (
+      item.contentid !== contentid.value && item.mapx != null && item.mapy != null
+    ))
+    destinationSearchOpen.value = true
+  } catch (caught) {
+    routeError.value = getApiErrorMessage(caught, '도착지 검색에 실패했습니다.')
+  } finally {
+    destinationSearching.value = false
+  }
+}
+
+function selectDestination(item: Location): void {
+  destination.value = item
+  destinationKeyword.value = item.title
+  destinationResults.value = []
+  destinationSearchOpen.value = false
+  routeData.value = null
+  routeError.value = ''
+}
+
+async function findRoute(): Promise<void> {
+  if (!location.value || !destination.value || routeLoading.value) {
+    routeError.value = '도착할 지역정보를 먼저 선택해 주세요.'
+    return
+  }
+  routeLoading.value = true
+  routeError.value = ''
+  routeData.value = null
+  try {
+    routeData.value = await fetchAStarRoute({
+      start_contentid: location.value.contentid,
+      end_contentid: destination.value.contentid,
+      mode: 'drive',
+    })
+  } catch (caught) {
+    routeError.value = getApiErrorMessage(caught, '경로를 계산하지 못했습니다.')
+  } finally {
+    routeLoading.value = false
+  }
+}
+
+function clearRoute(): void {
+  routeData.value = null
+  routeError.value = ''
+}
+
+function formatDistance(meters: number): string {
+  return meters >= 1000 ? `${(meters / 1000).toFixed(1)}km` : `${meters}m`
+}
+
 function formatDate(value: string): string {
   return new Intl.DateTimeFormat('ko-KR', {
     year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit',
@@ -329,21 +466,142 @@ function formatDate(value: string): string {
         </div>
         <p v-if="actionError" class="form-error location-action-error">{{ actionError }}</p>
 
-        <section v-if="mapEmbedUrl" class="embedded-map-section">
-          <div class="embedded-map-heading">
-            <div><span class="eyebrow">MAP</span><h2>위치 지도</h2></div>
-            <span><MapPin :size="15" /> {{ location.mapy?.toFixed(5) }}, {{ location.mapx?.toFixed(5) }}</span>
+        <section v-if="location.mapx != null && location.mapy != null" class="embedded-map-section route-map-section">
+          <div class="embedded-map-heading map-section-heading">
+            <div><span class="eyebrow">MAP & ROUTE</span><h2>위치 지도와 경로 찾기</h2></div>
+            <div class="map-heading-actions">
+              <span class="map-coordinate"><MapPin :size="15" /> {{ location.mapy?.toFixed(5) }}, {{ location.mapx?.toFixed(5) }}</span>
+              <div class="map-view-toggle" role="tablist" aria-label="지도 화면 선택">
+                <button
+                  type="button"
+                  role="tab"
+                  :aria-selected="mapView === 'location'"
+                  :class="{ active: mapView === 'location' }"
+                  @click="mapView = 'location'"
+                >
+                  <MapPin :size="15" /> 위치
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  :aria-selected="mapView === 'route'"
+                  :class="{ active: mapView === 'route' }"
+                  @click="mapView = 'route'"
+                >
+                  <RouteIcon :size="15" /> 경로찾기
+                </button>
+              </div>
+            </div>
           </div>
-          <iframe
-            :src="mapEmbedUrl"
-            :title="`${location.title} 위치 지도`"
-            class="embedded-map"
-            loading="lazy"
-            referrerpolicy="no-referrer"
-          ></iframe>
-          <p class="map-attribution">지도 데이터 © OpenStreetMap contributors</p>
+
+          <div v-if="mapView === 'location'" class="location-map-pane">
+            <iframe
+              v-if="mapEmbedUrl"
+              :src="mapEmbedUrl"
+              :title="`${location.title} 위치 지도`"
+              class="embedded-map"
+              loading="lazy"
+              referrerpolicy="no-referrer"
+            ></iframe>
+            <p class="map-attribution">지도 데이터 © OpenStreetMap contributors</p>
+          </div>
+
+          <div v-else class="route-map-pane">
+            <div class="route-planner-panel">
+              <div class="route-start-summary">
+                <span class="route-step-badge">출발</span>
+                <div>
+                  <strong>{{ location.title }}</strong>
+                  <small>{{ location.addr1 || '주소 미제공' }}</small>
+                </div>
+              </div>
+
+              <div class="route-search-grid">
+                <label class="route-region-field">
+                  <span>검색 지역</span>
+                  <select v-model="destinationRegion" class="form-input compact-select">
+                    <option value="전체">전체</option>
+                    <option value="서울">서울</option>
+                    <option value="경기">경기</option>
+                  </select>
+                </label>
+
+                <div class="route-destination-search">
+                  <label for="route-destination">도착할 지역정보</label>
+                  <div class="route-search-input-wrap">
+                    <Search :size="17" />
+                    <input
+                      id="route-destination"
+                      v-model="destinationKeyword"
+                      class="form-input"
+                      autocomplete="off"
+                      placeholder="장소명 또는 주소 검색"
+                      @focus="destinationResults.length && (destinationSearchOpen = true)"
+                      @keydown.enter.prevent="searchDestinations"
+                    />
+                    <LoaderCircle v-if="destinationSearching" :size="17" class="route-spinner" />
+                  </div>
+                  <ul v-if="destinationSearchOpen" class="route-search-results">
+                    <li v-if="destinationResults.length === 0" class="route-search-empty">검색 결과가 없습니다.</li>
+                    <li v-for="item in destinationResults" :key="item.contentid">
+                      <button type="button" @click="selectDestination(item)">
+                        <img :src="item.firstimage || ''" :alt="item.title" />
+                        <span>
+                          <strong>{{ item.title }}</strong>
+                          <small>{{ item.region }} · {{ item.addr1 || '주소 미제공' }}</small>
+                        </span>
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+
+                <button type="button" class="button button-primary route-find-button" :disabled="routeLoading || !destination" @click="findRoute">
+                  <LoaderCircle v-if="routeLoading" :size="17" class="route-spinner" />
+                  <Navigation v-else :size="17" />
+                  {{ routeLoading ? '탐색 중...' : '경로 찾기' }}
+                </button>
+              </div>
+
+              <div v-if="location.nearby?.length" class="route-quick-destinations">
+                <span>가까운 장소 빠른 선택</span>
+                <button
+                  v-for="item in location.nearby"
+                  :key="item.contentid"
+                  type="button"
+                  :class="{ active: destination?.contentid === item.contentid }"
+                  @click="selectDestination(item)"
+                >
+                  {{ item.title }}
+                </button>
+              </div>
+
+              <div v-if="destination" class="route-selected-destination">
+                <span class="route-step-badge end">도착</span>
+                <div>
+                  <strong>{{ destination.title }}</strong>
+                  <small>{{ destination.addr1 || '주소 미제공' }}</small>
+                </div>
+                <button type="button" aria-label="도착지 선택 해제" @click="resetRoutePlanner"><X :size="16" /></button>
+              </div>
+              <p v-if="routeError" class="form-error route-error">{{ routeError }}</p>
+            </div>
+
+            <LocationRouteMap
+              :start="location"
+              :destination="destination"
+              :route-coordinates="routeCoordinates"
+            />
+
+            <div v-if="routeData" class="route-summary-grid">
+              <div><RouteIcon :size="18" /><span>경로 거리<strong>{{ formatDistance(routeData.distance_m) }}</strong></span></div>
+              <div><Car :size="18" /><span>예상 시간(자동차)<strong>약 {{ routeDriveMinutes }}분</strong></span></div>
+              <div><Footprints :size="18" /><span>예상 시간(도보)<strong>약 {{ routeWalkMinutes }}분</strong></span></div>
+            </div>
+            <p v-if="routeData" class="route-notice">{{ routeData.notice }}</p>
+            <p class="map-attribution">지도·도로 데이터 © OpenStreetMap contributors</p>
+          </div>
         </section>
-        <div v-else class="map-empty-state"><MapPin :size="24" /> 위치 좌표가 제공되지 않아 지도를 표시할 수 없습니다.</div>
+        <div v-else class="map-empty-state"><MapPin :size="24" /> 위치 좌표가 제공되지 않아 지도와 길찾기를 표시할 수 없습니다.</div>
       </article>
 
       <section v-if="location.nearby?.length" class="content-section nearby-location-section">

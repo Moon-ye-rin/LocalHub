@@ -20,6 +20,11 @@ class Settings(BaseSettings):
     upload_dir: str = "uploads"
     max_upload_bytes: int = 5 * 1024 * 1024
     frontend_public_url: str = "http://localhost:5173"
+    overpass_url: str = "https://overpass-api.de/api/interpreter"
+    route_timeout_seconds: float = 45.0
+    route_max_distance_km: float = 45.0
+    route_max_snap_meters: float = 1500.0
+    route_max_graph_nodes: int = 120000
 
     model_config = SettingsConfigDict(
         env_file=".env",

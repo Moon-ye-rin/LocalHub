@@ -52,3 +52,23 @@ trim(firstimage) != ''
 | 합계 | 12,512 | 11,598 |
 
 서울 음식점 데이터는 원본 1,097건이며 이 중 953건이 화면에 노출됩니다.
+
+## v1.10 확장 — A* 길찾기
+
+기존 API 명세에 없던 선택 기능으로 아래 엔드포인트를 추가했습니다.
+
+```text
+POST /api/routes/astar
+```
+
+요청:
+
+```json
+{
+  "start_contentid": "126508",
+  "end_contentid": "999001",
+  "mode": "walk"
+}
+```
+
+응답에는 A*로 계산한 도로 경로 좌표, 경로 거리, 예상 시간, 탐색 노드 수가 포함됩니다. `mode`는 `walk` 또는 `drive`입니다. 도로망은 OpenStreetMap Overpass API에서 조회하며, 공용 서버 오류·시간 초과 시 503을 반환합니다.

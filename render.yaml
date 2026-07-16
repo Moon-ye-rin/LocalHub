@@ -29,3 +29,10 @@ services:
         sync: false
       - key: FRONTEND_PUBLIC_URL
         sync: false
+
+      - key: OVERPASS_URL
+        value: https://overpass-api.de/api/interpreter
+      - key: ROUTE_TIMEOUT_SECONDS
+        value: 45
+      - key: ROUTE_MAX_DISTANCE_KM
+        value: 45

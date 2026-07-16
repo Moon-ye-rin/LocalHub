@@ -290,3 +290,76 @@ def test_share_pages_have_open_graph_metadata(client):
     assert '경복궁 | LocalHub' in location_share.text
     assert 'https://example.com/gyeongbokgung.jpg' in location_share.text
     assert 'http://localhost:5173/locations/126508' in location_share.text
+
+
+def test_astar_core_finds_shortest_road_path():
+    from app.services.route_service import RoadGraph, astar
+
+    graph = RoadGraph(
+        coordinates={
+            1: (37.0, 127.0),
+            2: (37.0, 127.001),
+            3: (37.001, 127.001),
+            4: (37.0, 127.002),
+        },
+        adjacency={
+            1: [(2, 100.0), (3, 500.0)],
+            2: [(4, 100.0)],
+            3: [(4, 500.0)],
+            4: [],
+        },
+    )
+    path, distance, explored = astar(graph, 1, 4)
+    assert path == [1, 2, 4]
+    assert distance == 200.0
+    assert explored >= 2
+
+
+def test_astar_route_endpoint_contract(client, monkeypatch):
+    from app.services import route_service
+
+    async def fake_route(db, payload):
+        assert payload.start_contentid == "126508"
+        assert payload.end_contentid == "999001"
+        assert payload.mode == "walk"
+        return {
+            "algorithm": "A*",
+            "mode": "walk",
+            "start": {
+                "contentid": "126508",
+                "title": "경복궁",
+                "latitude": 37.5796,
+                "longitude": 126.9769,
+            },
+            "end": {
+                "contentid": "999001",
+                "title": "수원화성",
+                "latitude": 37.2870,
+                "longitude": 127.0180,
+            },
+            "distance_m": 35000,
+            "direct_distance_m": 32700,
+            "estimated_minutes": 467,
+            "drive_minutes": 70,
+            "walk_minutes": 467,
+            "explored_nodes": 42,
+            "coordinates": [[37.5796, 126.9769], [37.2870, 127.0180]],
+            "attribution": "도로 데이터 © OpenStreetMap contributors",
+            "notice": "테스트 경로",
+        }
+
+    monkeypatch.setattr(route_service, "find_astar_route", fake_route)
+    response = client.post(
+        "/api/routes/astar",
+        json={
+            "start_contentid": "126508",
+            "end_contentid": "999001",
+            "mode": "walk",
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["algorithm"] == "A*"
+    assert data["drive_minutes"] == 70
+    assert data["walk_minutes"] == 467
+    assert data["coordinates"][0] == [37.5796, 126.9769]
